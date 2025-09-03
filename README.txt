@@ -136,3 +136,9 @@ MIT — free to use and adapt.
 This project demonstrates building an **AI SaaS MVP**:  
 frontend → backend → AI agent → deploy.  
 Designed to showcase skills in **full-stack development, AI integration, and cloud deployment**.
+
+
+Render uses github creds
+https://agent-hub-ritm.onrender.com/health
+
+Vercel uses github
