@@ -1,0 +1,12 @@
+[
+  {
+    "name": "Bristol Myers Squibb",
+    "preferred": "Bristol Myers Squibb",
+    "abbreviations": ["BMS"],
+    "legal_names": ["Bristol-Myers Squibb Company"],
+    "disallow": [
+      "Bristol-Myers Squibb","Bristol-Myers","Bristol Meyers",
+      "Bristol-Meyers","Bristol Myers-Squibb","Bristol-Myers-Squibb","Bristol Myers Squib"
+    ]
+  }
+]
