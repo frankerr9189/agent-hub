@@ -14,6 +14,9 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import fitz  # PyMuPDF
 from openai import OpenAI
+from models import Lead
+from db import db, init_db
+import datetime
 
 # ---- Setup & config
 load_dotenv(dotenv_path=Path(__file__).with_name(".env"))
@@ -21,6 +24,11 @@ app = Flask(__name__)
 # replace: CORS(app)
 from flask_cors import CORS
 CORS(app, resources={r"/*": {"origins": "*"}}, expose_headers=["Content-Disposition"])
+
+# --- DB init ---
+init_db(app)
+with app.app_context():
+    db.create_all()
 
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB
 
@@ -506,6 +514,32 @@ def proofread_dryrun():
         except Exception:
             pass
 
+@app.route("/lead", methods=["POST"])
+def lead():
+    try:
+        data = request.get_json(force=True)
+        name = data.get("name", "").strip()
+        email = data.get("email", "").strip()
+        phone = data.get("phone", "").strip()
+        interest = data.get("interest", "General").strip()
+
+        if not name or not email:
+            return jsonify({"error": "name and email required"}), 400
+
+        lead = Lead(
+            name=name,
+            email=email,
+            phone=phone,
+            interest=interest,
+            created_at=datetime.datetime.utcnow(),
+        )
+        db.session.add(lead)
+        db.session.commit()
+        return jsonify({"ok": True}), 201
+
+    except Exception as e:
+        print("LEAD ERROR:", e)
+        return jsonify({"error": "server error"}), 500
 
 @app.post("/proofread")
 def proofread():

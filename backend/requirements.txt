@@ -4,3 +4,13 @@ python-dotenv
 PyMuPDF
 openai
 gunicorn
+flask
+flask-cors
+flask-sqlalchemy
+python-dotenv
+requests
+PyMuPDF
+openai
+
+# optional for Postgres later:
+# psycopg2-binary
