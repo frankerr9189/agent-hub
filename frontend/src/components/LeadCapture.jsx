@@ -11,10 +11,15 @@ export default function LeadCapture({ interest = "General", onSuccess }) {
     setForm((f) => ({ ...f, interest }));
   }, [interest]);
 
-  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const onChange = (e) => {
+    const { name, value } = e.target;
+    setForm((f) => ({ ...f, [name]: value }));
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    if (status.loading) return;
+
     setStatus({ loading: true, msg: "", ok: null });
 
     // quick front-end guard
@@ -30,12 +35,18 @@ export default function LeadCapture({ interest = "General", onSuccess }) {
       onSuccess?.();
     } catch (err) {
       console.error(err);
-      setStatus({ loading: false, msg: "Something went wrong.", ok: false });
+      const msg = (err && err.message) ? err.message : "Something went wrong.";
+      setStatus({ loading: false, msg, ok: false });
     }
   };
 
   return (
-    <form onSubmit={onSubmit} className="card" style={{ display: "grid", gap: 12, minWidth: 320 }}>
+    <form
+      onSubmit={onSubmit}
+      className="card"
+      style={{ display: "grid", gap: 12, minWidth: 320 }}
+      noValidate
+    >
       <h3 style={{ margin: 0, color: "#fff" }}>Get access to {interest}</h3>
 
       <input
@@ -47,6 +58,7 @@ export default function LeadCapture({ interest = "General", onSuccess }) {
         required
         autoComplete="name"
       />
+
       <input
         className="input"
         name="email"
@@ -57,6 +69,7 @@ export default function LeadCapture({ interest = "General", onSuccess }) {
         required
         autoComplete="email"
       />
+
       <input
         className="input"
         name="phone"
@@ -66,11 +79,30 @@ export default function LeadCapture({ interest = "General", onSuccess }) {
         autoComplete="tel"
       />
 
-      {/* Show interest as read-only (still included in JSON via state) */}
-      <input className="input" value={interest} readOnly />
+      {/* Show interest as read-only (still posted via state) */}
+      <input
+        className="input"
+        value={form.interest}
+        readOnly
+        aria-label="Interest"
+      />
 
       <button className="btn btn-ghost" disabled={status.loading}>
         {status.loading ? "Submitting…" : "Request Access"}
       </button>
 
       {status.msg && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            color: status.ok ? "#8de99b" : "#ff8e8e",
+            fontSize: 14,
+          }}
+        >
+          {status.msg}
+        </div>
+      )}
+    </form>
+  );
+}
