@@ -22,9 +22,12 @@ export default function Agents() {
 
   return (
     <section style={{ paddingTop: 8 }}>
-      <h1 style={{ fontSize: 24, margin: "0 0 6px", color: "#fff" }}>AI Agents</h1>
+      <h1 style={{ fontSize: 24, margin: "0 0 6px", color: "#fff" }}>
+        AI Agents
+      </h1>
       <p style={{ marginTop: 0, color: "var(--muted)" }}>
-        Click an agent to try — we’ll ask for your info first, then unlock it instantly.
+        Click an agent to try — we’ll ask for your info first, then unlock it
+        instantly.
       </p>
 
       <div className="grid" style={{ marginTop: 12 }}>

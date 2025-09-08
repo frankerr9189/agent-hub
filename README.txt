@@ -142,3 +142,5 @@ Render uses github creds
 https://agent-hub-ritm.onrender.com/health
 
 Vercel uses github
+https://agent-hub-mocha.vercel.app
+
