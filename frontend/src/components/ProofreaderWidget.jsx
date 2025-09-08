@@ -1,6 +1,6 @@
 // frontend/src/components/ProofreaderWidget.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
-import { apiUrl } from "../lib/api"; // ✅ env-driven base
+import { apiUrl } from "../lib/api"; // env-driven base
 
 export default function ProofreaderWidget() {
   const [file, setFile] = useState(null);
@@ -33,8 +33,16 @@ export default function ProofreaderWidget() {
     const f = e.dataTransfer?.files?.[0];
     if (f) onPickFileDirect(f);
   };
-  const onDragOver = (e) => { e.preventDefault(); e.stopPropagation(); setDragActive(true); };
-  const onDragLeave = (e) => { e.preventDefault(); e.stopPropagation(); setDragActive(false); };
+  const onDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(true);
+  };
+  const onDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+  };
 
   const onPickFile = (e) => {
     const f = e.target.files?.[0];
@@ -315,7 +323,10 @@ export default function ProofreaderWidget() {
           {downloadUrl && (
             <p style={{ marginTop: 12, color: "#0f172a" }}>
               If your browser blocked the download,{" "}
-              <a href={downloadUrl} download={`annotated_${file?.name}`}>click here to save it</a>.
+              <a href={downloadUrl} download={`annotated_${file?.name}`}>
+                click here to save it
+              </a>
+              .
             </p>
           )}
         </>
@@ -330,7 +341,13 @@ const styles = {
     color: "#0f172a",
     fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
   },
-  pickRow: { display: "flex", alignItems: "center", gap: 10, marginTop: 10, flexWrap: "wrap" },
+  pickRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 10,
+    flexWrap: "wrap",
+  },
   or: { color: "#334155" },
   fileLabel: {
     border: "1px solid #94a3b8",
@@ -366,19 +383,83 @@ const styles = {
     color: "#ffffff",
     cursor: "pointer",
   },
-  error: { marginTop: 12, color: "#991b1b", background: "#fee2e2", border: "1px solid #fecaca", padding: 10, borderRadius: 8 },
-  toolbar: { marginTop: 16, display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between" },
+  error: {
+    marginTop: 12,
+    color: "#991b1b",
+    background: "#fee2e2",
+    border: "1px solid #fecaca",
+    padding: 10,
+    borderRadius: 8,
+  },
+  toolbar: {
+    marginTop: 16,
+    display: "flex",
+    gap: 12,
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   badges: { display: "flex", gap: 8, flexWrap: "wrap" },
-  badge: { background: "#e0e7ff", color: "#1e3a8a", padding: "4px 8px", borderRadius: 999, fontSize: 12 },
-  badgeMuted: { background: "#e5e7eb", color: "#111827", padding: "4px 8px", borderRadius: 999, fontSize: 12 },
-  search: { border: "1px solid #94a3b8", borderRadius: 8, padding: "6px 10px", minWidth: 220, color: "#0f172a" },
-  tableWrap: { marginTop: 12, maxHeight: 360, overflow: "auto", border: "1px solid #cbd5e1", borderRadius: 8 },
-  table: { width: "100%", borderCollapse: "collapse", fontSize: 14, color: "#0f172a" },
-  th: { textAlign: "left", position: "sticky", top: 0, background: "#e5e7eb", color: "#0f172a", borderBottom: "1px solid #cbd5e1", padding: "8px 10px" },
-  td: { verticalAlign: "top", borderTop: "1px solid "#e5e7eb", padding: "8px 10px", lineHeight: 1.35 },
+  badge: {
+    background: "#e0e7ff",
+    color: "#1e3a8a",
+    padding: "4px 8px",
+    borderRadius: 999,
+    fontSize: 12,
+  },
+  badgeMuted: {
+    background: "#e5e7eb",
+    color: "#111827",
+    padding: "4px 8px",
+    borderRadius: 999,
+    fontSize: 12,
+  },
+  search: {
+    border: "1px solid #94a3b8",
+    borderRadius: 8,
+    padding: "6px 10px",
+    minWidth: 220,
+    color: "#0f172a",
+  },
+  tableWrap: {
+    marginTop: 12,
+    maxHeight: 360,
+    overflow: "auto",
+    border: "1px solid #cbd5e1",
+    borderRadius: 8,
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    fontSize: 14,
+    color: "#0f172a",
+  },
+  th: {
+    textAlign: "left",
+    position: "sticky",
+    top: 0,
+    background: "#e5e7eb",
+    color: "#0f172a",
+    borderBottom: "1px solid #cbd5e1",
+    padding: "8px 10px",
+  },
+  td: {
+    verticalAlign: "top",
+    borderTop: "1px solid #e5e7eb",
+    padding: "8px 10px",
+    lineHeight: 1.35,
+  },
   trOdd: { background: "#f8fafc" },
-  progressOuter: { height: 8, background: "#e5e7eb", borderRadius: 999, overflow: "hidden" },
-  progressInner: { height: "100%", background: "#1d4ed8", transition: "width 180ms ease" },
+  progressOuter: {
+    height: 8,
+    background: "#e5e7eb",
+    borderRadius: 999,
+    overflow: "hidden",
+  },
+  progressInner: {
+    height: "100%",
+    background: "#1d4ed8",
+    transition: "width 180ms ease",
+  },
   progressLabels: { marginTop: 6, fontSize: 12, color: "#334155" },
 };
 
