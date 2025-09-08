@@ -1,6 +1,6 @@
 // frontend/src/components/ProofreaderWidget.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
-import { apiUrl } from "../lib/api"; // ✅ use env-driven base
+import { apiUrl } from "../lib/api"; // ✅ env-driven base
 
 export default function ProofreaderWidget() {
   const [file, setFile] = useState(null);
@@ -282,3 +282,142 @@ export default function ProofreaderWidget() {
               <thead>
                 <tr>
                   <th style={styles.th}>Pg</th>
+                  <th style={styles.th}>Type</th>
+                  <th style={styles.th}>Excerpt</th>
+                  <th style={styles.th}>Problem</th>
+                  <th style={styles.th}>Suggestion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((it, i) => (
+                  <tr key={i} style={i % 2 ? styles.trOdd : undefined}>
+                    <td style={styles.td}>{it.page}</td>
+                    <td style={styles.td}>{it.type}</td>
+                    <td style={{ ...styles.td, maxWidth: 320 }}>
+                      {(it.sentence_or_excerpt || "").slice(0, 200)}
+                      {(it.sentence_or_excerpt || "").length > 200 ? "…" : ""}
+                    </td>
+                    <td style={{ ...styles.td, maxWidth: 280 }}>{it.problem}</td>
+                    <td style={{ ...styles.td, maxWidth: 280 }}>{it.suggestion}</td>
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={5} style={{ ...styles.td, textAlign: "center", padding: 24 }}>
+                      No issues match your filter.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {downloadUrl && (
+            <p style={{ marginTop: 12, color: "#0f172a" }}>
+              If your browser blocked the download,{" "}
+              <a href={downloadUrl} download={`annotated_${file?.name}`}>click here to save it</a>.
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+const styles = {
+  wrap: {
+    marginTop: 8,
+    color: "#0f172a",
+    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
+  },
+  pickRow: { display: "flex", alignItems: "center", gap: 10, marginTop: 10, flexWrap: "wrap" },
+  or: { color: "#334155" },
+  fileLabel: {
+    border: "1px solid #94a3b8",
+    borderRadius: 8,
+    padding: "6px 10px",
+    cursor: "pointer",
+    background: "#f8fafc",
+    color: "#0f172a",
+  },
+  fileName: { color: "#0f172a", fontSize: 14 },
+  actions: { display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" },
+  btn: {
+    padding: "8px 12px",
+    borderRadius: 8,
+    border: "1px solid #94a3b8",
+    background: "#e2e8f0",
+    color: "#0f172a",
+    cursor: "pointer",
+  },
+  btnSecondary: {
+    padding: "8px 12px",
+    borderRadius: 8,
+    border: "1px solid #94a3b8",
+    background: "#f1f5f9",
+    color: "#0f172a",
+    cursor: "pointer",
+  },
+  btnPrimary: {
+    padding: "8px 12px",
+    borderRadius: 8,
+    border: "1px solid #1d4ed8",
+    background: "#1d4ed8",
+    color: "#ffffff",
+    cursor: "pointer",
+  },
+  error: { marginTop: 12, color: "#991b1b", background: "#fee2e2", border: "1px solid #fecaca", padding: 10, borderRadius: 8 },
+  toolbar: { marginTop: 16, display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between" },
+  badges: { display: "flex", gap: 8, flexWrap: "wrap" },
+  badge: { background: "#e0e7ff", color: "#1e3a8a", padding: "4px 8px", borderRadius: 999, fontSize: 12 },
+  badgeMuted: { background: "#e5e7eb", color: "#111827", padding: "4px 8px", borderRadius: 999, fontSize: 12 },
+  search: { border: "1px solid #94a3b8", borderRadius: 8, padding: "6px 10px", minWidth: 220, color: "#0f172a" },
+  tableWrap: { marginTop: 12, maxHeight: 360, overflow: "auto", border: "1px solid #cbd5e1", borderRadius: 8 },
+  table: { width: "100%", borderCollapse: "collapse", fontSize: 14, color: "#0f172a" },
+  th: { textAlign: "left", position: "sticky", top: 0, background: "#e5e7eb", color: "#0f172a", borderBottom: "1px solid #cbd5e1", padding: "8px 10px" },
+  td: { verticalAlign: "top", borderTop: "1px solid "#e5e7eb", padding: "8px 10px", lineHeight: 1.35 },
+  trOdd: { background: "#f8fafc" },
+  progressOuter: { height: 8, background: "#e5e7eb", borderRadius: 999, overflow: "hidden" },
+  progressInner: { height: "100%", background: "#1d4ed8", transition: "width 180ms ease" },
+  progressLabels: { marginTop: 6, fontSize: 12, color: "#334155" },
+};
+
+const css = `
+.dropzone {
+  border: 2px dashed #94a3b8;
+  border-radius: 12px;
+  padding: 24px;
+  background: #f1f5f9;
+  text-align: center;
+  cursor: pointer;
+  transition: all .15s ease;
+  color: #0f172a;
+}
+.dropzone.active {
+  background: #e0e7ff;
+  border-color: #4f46e5;
+}
+.bar-animated {
+  position: relative;
+  height: 4px;
+  overflow: hidden;
+  background: #cbd5e1;
+  border-radius: 999px;
+  margin-top: 8px;
+}
+.bar-animated::before {
+  content: "";
+  position: absolute;
+  left: -40%;
+  top: 0;
+  height: 100%;
+  width: 40%;
+  background: #60a5fa;
+  animation: slide 1.1s infinite;
+}
+@keyframes slide {
+  0% { left: -40%; }
+  50% { left: 60%; }
+  100% { left: 110%; }
+}
+`;
