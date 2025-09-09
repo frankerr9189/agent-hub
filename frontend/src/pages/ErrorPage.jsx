@@ -6,6 +6,7 @@ import {
   useNavigate,
   useLocation,
 } from "react-router-dom";
+import { apiUrl } from "../lib/api"; // ✅ env-driven base
 
 export default function ErrorPage() {
   const error = useRouteError();
@@ -34,18 +35,9 @@ export default function ErrorPage() {
 
   const goHome = () => navigate("/", { replace: true });
 
-  // Use API base from env (e.g., VITE_API_BASE="http://localhost:5050")
-  const API_BASE = import.meta.env.VITE_API_BASE || "";
-  if (!API_BASE) {
-    // If you prefer proxying in Vite, keep this empty and set server.proxy in vite.config.js
-    // Otherwise, set VITE_API_BASE in your frontend .env file.
-    // console.info("VITE_API_BASE not set. Using relative /api path (requires Vite proxy).");
-  }
-
   const submitReport = async () => {
     try {
-      const url = `${API_BASE}/api/report-issue`.replace(/([^:]\/)\/+/g, "$1"); // tidy double slashes
-      const res = await fetch(url, {
+      const res = await fetch(apiUrl("/api/report-issue"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -53,7 +45,9 @@ export default function ErrorPage() {
           status,
           message,
           note: reportMsg,
-          userAgent: navigator.userAgent,
+          userAgent:
+            typeof navigator !== "undefined" ? navigator.userAgent : "N/A",
+          env: import.meta.env.MODE,
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -69,7 +63,6 @@ export default function ErrorPage() {
   return (
     <main className="min-h-[80vh] bg-neutral-950 text-white">
       <div className="mx-auto max-w-5xl px-4 pt-14">
-        {/* “Home page” feel: big headline + subtle gradient */}
         <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
           {title}
         </h1>
@@ -124,7 +117,7 @@ export default function ErrorPage() {
         </div>
       </div>
 
-      {/* Lightweight modal (no deps) */}
+      {/* Lightweight modal */}
       {reportOpen && (
         <div
           className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4"

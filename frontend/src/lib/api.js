@@ -18,3 +18,4 @@ export async function upload(path, file, fieldName = "file") {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res;
 }
+
