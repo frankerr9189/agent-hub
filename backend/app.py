@@ -63,6 +63,7 @@ limiter = Limiter(
 
 # Slack integration
 SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")  # set this in your .env
+SLACK_WEBHOOK_URL_LEAD = os.getenv("SLACK_WEBHOOK_URL_LEAD")  # set this in your .env
 
 # --- DB init ---
 init_db(app)
@@ -505,27 +506,61 @@ def proofread_dryrun():
             pass
 
 @app.route("/lead", methods=["POST"])
+# @limiter.limit("10 per minute")  # optional if you're using Flask-Limiter
 def lead():
     try:
-        data = request.get_json(force=True)
-        name = data.get("name", "").strip()
-        email = data.get("email", "").strip()
-        phone = data.get("phone", "").strip()
-        interest = data.get("interest", "General").strip()
+        data = request.get_json(force=True) or {}
+        name = (data.get("name") or "").strip()
+        email = (data.get("email") or "").strip()
+        phone = (data.get("phone") or "").strip()
+        interest = (data.get("interest") or "General").strip()
 
         if not name or not email:
             return jsonify({"error": "name and email required"}), 400
 
-        lead = Lead(
-            name=name,
-            email=email,
-            phone=phone,
-            interest=interest,
-            created_at=dt.utcnow(),
-        )
-        db.session.add(lead)
-        db.session.commit()
-        return jsonify({"ok": True}), 201
+        # 1) Try DB save (OK if DB not configured)
+        saved = False
+        try:
+            lead = Lead(
+                name=name,
+                email=email,
+                phone=phone,
+                interest=interest,
+                created_at=dt.utcnow(),
+            )
+            db.session.add(lead)
+            db.session.commit()
+            saved = True
+        except Exception as e:
+            print("DB save failed (continuing with Slack only):", e)
+
+        # 2) Always notify Slack (if webhook is set)
+        slack_sent = False
+        try:
+            if SLACK_WEBHOOK_URL_LEAD:
+                text = (
+                    f"*New lead*\n"
+                    f"*Name:* {name}\n"
+                    f"*Email:* <mailto:{email}|{email}>\n"
+                    f"*Phone:* {phone or '—'}\n"
+                    f"*Interest:* {interest}\n"
+                    f"*Origin:* {request.headers.get('Origin') or 'N/A'}"
+                )
+                resp = requests.post(SLACK_WEBHOOK_URL_LEAD, json={"text": text}, timeout=10)
+                print("Slack resp:", resp.status_code, resp.text[:200])
+                resp.raise_for_status()
+                slack_sent = True
+            else:
+                print("SLACK_WEBHOOK_URL_LEAD not set—skipping Slack notify.")
+        except Exception as e:
+            print("Slack post failed:", e)
+
+        # 3) Consider it a success if either DB saved or Slack sent
+        if saved or slack_sent:
+            return jsonify({"ok": True, "saved": saved, "slack": slack_sent}), 201
+
+        return jsonify({"ok": False, "error": "Lead not saved and Slack not configured"}), 500
+
     except Exception as e:
         print("LEAD ERROR:", e)
         return jsonify({"error": "server error"}), 500
