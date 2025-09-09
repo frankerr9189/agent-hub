@@ -24,7 +24,14 @@ load_dotenv(dotenv_path=Path(__file__).with_name(".env"))
 app = Flask(__name__)
 
 # DEV CORS (ok for local; tighten for prod)
-CORS(app, resources={r"/api/*": {"origins": "*"}}, expose_headers=["Content-Disposition"])
+CORS(
+    app,
+    resources={r"/*": {"origins": "*"}},
+    expose_headers=["Content-Disposition"],
+    supports_credentials=False,
+    methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+)
 
 # Rate limiting
 app.config["RATELIMIT_HEADERS_ENABLED"] = True
