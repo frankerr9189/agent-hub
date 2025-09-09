@@ -8,7 +8,7 @@ import traceback
 from datetime import datetime as dt
 from pathlib import Path
 from typing import List, Dict, Any
-
+from time import time
 from flask import Flask, request, send_file, jsonify
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -27,6 +27,8 @@ allowed = [o.strip() for o in os.getenv(
     "ALLOWED_ORIGINS",
     "http://localhost:5173"
 ).split(",") if o.strip()]
+
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 ADMIN_API_TOKEN = os.getenv("ADMIN_API_TOKEN")  # set this in Render
 
@@ -506,7 +508,7 @@ def proofread_dryrun():
             pass
 
 @app.route("/lead", methods=["POST"])
-# @limiter.limit("10 per minute")  # optional if you're using Flask-Limiter
+@limiter.limit("10 per minute")  # optional but recommended
 def lead():
     try:
         data = request.get_json(force=True) or {}
@@ -515,8 +517,24 @@ def lead():
         phone = (data.get("phone") or "").strip()
         interest = (data.get("interest") or "General").strip()
 
+        # Honeypot: add a hidden "company" input in the form; bots often fill it
+        if (data.get("company") or "").strip():
+            # Pretend success; silently drop
+            return jsonify({"ok": True, "honeypot": True}), 201
+
         if not name or not email:
             return jsonify({"error": "name and email required"}), 400
+        if not EMAIL_RE.match(email):
+            return jsonify({"error": "invalid email"}), 400
+
+        # Light de-dupe (30s per email+interest+ip)
+        ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+        key = (email.lower(), interest, ip)
+        seen = app.config.setdefault("_lead_seen", {})
+        now = time()
+        if key in seen and now - seen[key] < 30:
+            return jsonify({"ok": True, "deduped": True}), 201
+        seen[key] = now
 
         # 1) Try DB save (OK if DB not configured)
         saved = False
@@ -537,25 +555,33 @@ def lead():
         # 2) Always notify Slack (if webhook is set)
         slack_sent = False
         try:
-            if SLACK_WEBHOOK_URL_LEAD:
-                text = (
-                    f"*New lead*\n"
-                    f"*Name:* {name}\n"
-                    f"*Email:* <mailto:{email}|{email}>\n"
-                    f"*Phone:* {phone or '—'}\n"
-                    f"*Interest:* {interest}\n"
-                    f"*Origin:* {request.headers.get('Origin') or 'N/A'}"
-                )
-                resp = requests.post(SLACK_WEBHOOK_URL_LEAD, json={"text": text}, timeout=10)
+            if SLACK_WEBHOOK_LEADS_URL:
+                payload = {
+                    "blocks": [
+                        {"type": "header", "text": {"type": "plain_text", "text": "New lead"}},
+                        {
+                            "type": "section",
+                            "fields": [
+                                {"type": "mrkdwn", "text": f"*Name:*\n{name}"},
+                                {"type": "mrkdwn", "text": f"*Email:*\n<mailto:{email}|{email}>"},
+                                {"type": "mrkdwn", "text": f"*Phone:*\n{phone or '—'}"},
+                                {"type": "mrkdwn", "text": f"*Interest:*\n{interest}"},
+                                {"type": "mrkdwn", "text": f"*Origin:*\n{request.headers.get('Origin') or 'N/A'}"},
+                                {"type": "mrkdwn", "text": f"*IP:*\n`{ip}`"},
+                            ],
+                        },
+                    ]
+                }
+                resp = requests.post(SLACK_WEBHOOK_LEADS_URL, json=payload, timeout=10)
                 print("Slack resp:", resp.status_code, resp.text[:200])
                 resp.raise_for_status()
                 slack_sent = True
             else:
-                print("SLACK_WEBHOOK_URL_LEAD not set—skipping Slack notify.")
+                print("SLACK_WEBHOOK_LEADS_URL not set — skipping Slack notify.")
         except Exception as e:
             print("Slack post failed:", e)
 
-        # 3) Consider it a success if either DB saved or Slack sent
+        # 3) Success if either DB saved or Slack sent
         if saved or slack_sent:
             return jsonify({"ok": True, "saved": saved, "slack": slack_sent}), 201
 

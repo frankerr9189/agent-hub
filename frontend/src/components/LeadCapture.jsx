@@ -48,6 +48,15 @@ export default function LeadCapture({ interest = "General", onSuccess }) {
       noValidate
     >
       <h3 style={{ margin: 0, color: "#fff" }}>Get access to {interest}</h3>
+      
+      <input
+       name="company"
+       value={form.company || ""}
+       onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
+       style={{ display: "none" }}
+       tabIndex={-1}
+       autoComplete="off"
+      />
 
       <input
         className="input"
