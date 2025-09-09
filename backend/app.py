@@ -23,6 +23,23 @@ from db import db, init_db
 load_dotenv(dotenv_path=Path(__file__).with_name(".env"))
 app = Flask(__name__)
 
+allowed = [o.strip() for o in os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:5173"
+).split(",") if o.strip()]
+
+ADMIN_API_TOKEN = os.getenv("ADMIN_API_TOKEN")  # set this in Render
+
+def _require_admin_token():
+    if not ADMIN_API_TOKEN:
+        abort(503, description="ADMIN_API_TOKEN not configured")
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        abort(401)
+    token = auth.split(" ", 1)[1].strip()
+    if token != ADMIN_API_TOKEN:
+        abort(403)
+
 # DEV CORS (ok for local; tighten for prod)
 CORS(
     app,
@@ -589,6 +606,35 @@ def report_issue():
     except Exception as e:
         print("Slack error:", repr(e))
         return jsonify({"ok": False, "error": str(e)}), 500
+
+@app.get("/admin/leads")
+def admin_list_leads():
+    _require_admin_token()
+    try:
+        limit = max(1, min(int(request.args.get("limit", 25)), 200))
+    except Exception:
+        limit = 25
+    rows = (
+        Lead.query.order_by(Lead.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    def to_dict(x):
+        return {
+            "id": getattr(x, "id", None),
+            "name": x.name,
+            "email": x.email,
+            "phone": x.phone,
+            "interest": x.interest,
+            "created_at": x.created_at.isoformat() + "Z",
+        }
+    return jsonify({"items": [to_dict(r) for r in rows], "count": len(rows)})
+
+@app.get("/admin/leads/count")
+def admin_count_leads():
+    _require_admin_token()
+    total = Lead.query.count()
+    return jsonify({"count": total})
 
 if __name__ == "__main__":
     # Helpful: list routes on startup
